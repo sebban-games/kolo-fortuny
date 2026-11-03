@@ -1,0 +1,38 @@
+{
+  "rules": {
+    "kolo": {
+      "rooms": {
+        "$code": {
+          ".read": "auth != null",
+          ".write": "auth != null && data.child('meta/hostId').val() === auth.uid && !newData.exists()",
+          ".validate": "$code.matches(/^[A-Z0-9]{5}$/)",
+          "meta": {
+            ".write": "auth != null && ((!data.exists() && newData.child('hostId').val() === auth.uid) || data.child('hostId').val() === auth.uid)"
+          },
+          "game": {
+            ".write": "auth != null && root.child('kolo/rooms/' + $code + '/meta/hostId').val() === auth.uid",
+            "data": { ".validate": "newData.isString() && newData.val().length < 60000" }
+          },
+          "timer": {
+            ".write": "auth != null && root.child('kolo/rooms/' + $code + '/meta/hostId').val() === auth.uid"
+          },
+          "notify": {
+            "$uid": { ".write": "auth != null && root.child('kolo/rooms/' + $code + '/meta/hostId').val() === auth.uid" }
+          },
+          "players": {
+            "$uid": {
+              ".write": "auth != null && (auth.uid === $uid || root.child('kolo/rooms/' + $code + '/meta/hostId').val() === auth.uid)",
+              "name": { ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 16" }
+            }
+          },
+          "actions": {
+            "$aid": {
+              ".write": "auth != null && ((!data.exists() && newData.child('by').val() === auth.uid) || (!newData.exists() && root.child('kolo/rooms/' + $code + '/meta/hostId').val() === auth.uid))",
+              "data": { ".validate": "newData.isString() && newData.val().length < 400" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
