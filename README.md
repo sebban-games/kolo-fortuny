@@ -2,7 +2,7 @@
 
 Teleturniejowa gra słowna dla 2 do 4 osób. Kręcisz kołem, zgadujesz litery i odgadujesz hasło, zanim zrobią to rywale. Można grać na jednym urządzeniu, z botami albo online, każdy na swoim telefonie.
 
-**Otwórz grę** https://sebban03.github.io/kolo-fortuny/
+**Otwórz grę** https://sebban-games.github.io/kolo-fortuny/
 
 ## Start gry
 
