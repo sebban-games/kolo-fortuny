@@ -1,5 +1,5 @@
 /* Service worker: gra działa offline po pierwszym uruchomieniu. Zmień VERSION przy każdym wdrożeniu. */
-const VERSION = 'kf-2.0.2';
+const VERSION = 'kf-2.1.0';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest',
   'js/firebase-config.js', 'js/engine.js', 'js/puzzles.js', 'js/bot.js', 'js/audio.js',

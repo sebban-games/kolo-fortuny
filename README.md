@@ -2,13 +2,13 @@
 
 Teleturniejowa gra słowna dla 2 do 4 osób. Kręcisz kołem, zgadujesz litery i odgadujesz hasło, zanim zrobią to rywale. Można grać na jednym urządzeniu, z botami albo online, każdy na swoim telefonie.
 
-**Otwórz grę** https://sebban-games.github.io/kolo-fortuny/
+**Otwórz grę** https://sebban03.github.io/kolo-fortuny/
 
 ## Start gry
 
 1. Na ekranie głównym kliknij **Nowa gra**.
 2. Wpisz imiona graczy (od 2 do 4) w polach obok kolorowych pasków. Domyślnie są to Gracz 1, Gracz 2 i Gracz 3, a puste pole też dostaje taką nazwę. Imiona gra zapamiętuje na kolejne partie. Przy każdym graczu możesz wybrać **Człowiek** albo **Komputer** i poziom bota.
-3. Wybierz poziom trudności. **Łatwy**, **Średni** i **Trudny** ustawiają hasła, czas na ruch i siłę botów. **Własny** pozwala ustawić wszystko ręcznie.
+3. Wybierz poziom trudności. **Łatwy**, **Średni** i **Trudny** ustawiają hasła, czas na ruch i siłę botów. Liczby rund i czasu w finale nie zmieniają. **Własny** włącza się sam, gdy ręcznie zmienisz hasła, czas na ruch albo poziom któregoś bota.
 4. Ustaw liczbę rund i zdecyduj, czy gracie finał. Kliknij **Start gry**.
 
 Przerwaną grę można dokończyć później przyciskiem **Kontynuuj** w menu głównym.
@@ -28,7 +28,7 @@ Jeśli w haśle zostały już same samogłoski, kręcenie jest zablokowane i trz
 
 * **BANKRUT** zeruje punkty zdobyte w tej rundzie i zabiera kolejkę. Punkty z poprzednich rund są bezpieczne.
 * **STOP** zabiera kolejkę, punkty zostają.
-* **Niespodzianka** działa po trafionej spółgłosce. Wybierasz bezpieczne 1000 pkt za każdą odsłoniętą literę albo ryzyko 50 na 50 o 10 000 pkt. Przegrane ryzyko działa jak BANKRUT. Po odkryciu niespodzianki pole znika z koła do końca rundy.
+* **Niespodzianka** działa po trafionej spółgłosce. Wybierasz bezpieczne 1000 pkt za każdą odsłoniętą literę albo ryzyko 50 na 50 o 10 000 pkt. Kwoty są takie same w każdej rundzie. Przegrane ryzyko działa jak BANKRUT. Gdy zaryzykujesz, karta zostaje odkryta i pole znika z koła do końca rundy. Przy bezpiecznym wyborze pole zostaje. Jeśli przy wyborze skończy się czas na ruch, dostajesz bezpieczną nagrodę, a kolej przechodzi dalej.
 
 ## Punktacja
 
@@ -39,7 +39,7 @@ Jeśli w haśle zostały już same samogłoski, kręcenie jest zablokowane i trz
 
 ## Finał
 
-Do finału przechodzi osoba z największą pulą. Na tablicy odsłaniają się litery R, S, T, L, N i E. Finalista wybiera 3 spółgłoski i 1 samogłoskę, a potem ma kilkanaście sekund na odgadnięcie hasła. Może próbować wiele razy, dopóki biegnie czas. Nagroda jest w zamkniętej kopercie i dopisuje się do wyniku, jeśli hasło padnie na czas.
+Do finału przechodzi osoba z największą pulą. Na tablicy odsłaniają się litery R, S, T, L, N i E. Finalista wybiera 3 spółgłoski i 1 samogłoskę, a potem ma na odgadnięcie hasła tyle sekund, ile ustawiono w **Ustawieniach** (domyślnie 15). Może próbować wiele razy, dopóki biegnie czas. Nagroda jest w zamkniętej kopercie i dopisuje się do wyniku, jeśli hasło padnie na czas.
 
 ## Gra z botami
 
@@ -51,21 +51,27 @@ Boty mają trzy poziomy. **Łatwy** często pudłuje i późno zgaduje hasło, *
 2. Pozostali wybierają **Dołącz**, wpisują imię i 5 znakowy kod pokoju. Można też wysłać im link z przycisku **Kopiuj link**.
 3. Host może dodać boty i klika **Rozpocznij grę**, gdy w pokoju są co najmniej 2 osoby.
 
-Każdy klika tylko na swojej turze, a wynik ruchu widzą wszyscy jednocześnie. Gdy ktoś straci połączenie, jego tura po chwili przechodzi dalej. Po odświeżeniu strony można wrócić przyciskiem **Wróć do pokoju**.
+Każdy klika tylko na swojej turze, a wynik ruchu widzą wszyscy jednocześnie. Gdy ktoś straci połączenie, jego tura po chwili przechodzi dalej, a w finale gra sama wybiera za niego litery. Po odświeżeniu strony można wrócić przyciskiem **Wróć do pokoju**.
 
 ## Hasła
 
 W menu **Hasła** możesz dodawać własne hasła z kategorią i trudnością. Podgląd od razu pokazuje, jak hasło ułoży się na tablicy, a gra nie przyjmie hasła, które się nie zmieści albo już jest w banku. Hasła wbudowane można wyłączać, własne także edytować i usuwać. Treść haseł jest domyślnie zakryta, żeby nie psuć sobie zabawy.
 
 * **Eksportuj własne (JSON)** zapisuje Twoje hasła do pliku.
-* **Importuj z pliku** wczytuje hasła z pliku, np. na innym urządzeniu. Gra pokaże, ile haseł dodała i które odrzuciła.
+* **Importuj z pliku** wczytuje hasła z pliku, np. na innym urządzeniu. Gra pokaże, ile haseł dodała, a pod spodem listę odrzuconych z powodem.
+
+## Ustawienia i statystyki
+
+W **Ustawieniach** zmienisz koszt samogłoski, gwarancję za rundę, czas w finale, uznawanie haseł wpisanych bez polskich znaków, dźwięk i głośność, motyw, tempo animacji i botów, ograniczenie animacji oraz automatyczne przechodzenie do kolejnej rundy. Ekran **Zasady** w grze zawsze pokazuje aktualne wartości.
+
+**Statystyki** zbierają wygrane, rekordy i średnie każdego gracza oraz ostatnie 30 gier.
 
 ## Sterowanie z klawiatury
 
 * **Spacja** kręci kołem.
 * **Litera** wybiera literę, gdy klawiatura na ekranie jest aktywna.
 * **Enter** otwiera odgadywanie hasła, zatwierdza litery w finale albo przechodzi do następnej rundy.
-* **Esc** włącza pauzę albo anuluje zakup samogłoski.
+* **Esc** włącza pauzę (w grze online otwiera menu gry) albo anuluje zakup samogłoski. Pauza zatrzymuje też zegar.
 
 Przycisk ⛶ włącza pełny ekran, a 🔊 wycisza dźwięk.
 
