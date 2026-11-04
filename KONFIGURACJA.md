@@ -53,6 +53,10 @@ Brak. Gra lokalna działa od razu po wrzuceniu plików.
 
 ### Opcjonalna: tryb online (Firebase)
 
+Obecna konfiguracja: Koło korzysta z projektu **`crossword-online-68520`**, tego samego co Crossword Duel. Crossword używa w nim bazy **Cloud Firestore**, a Koło bazy **Realtime Database** (lokalizacja europe-west1). Obie bazy mają osobne reguły, więc zmiana reguł jednej nie wpływa na drugą. Logowanie anonimowe i autoryzowana domena `sebban-games.github.io` są wspólne dla obu gier.
+
+Kroki dla nowego projektu albo ponownej konfiguracji:
+
 1. W [konsoli Firebase](https://console.firebase.google.com) użyj istniejącego projektu albo utwórz nowy.
 2. **Build → Realtime Database** i utwórz bazę.
 3. **Build → Authentication → Sign-in method** i włącz **Anonymous**.
@@ -67,6 +71,8 @@ Brak. Gra lokalna działa od razu po wrzuceniu plików.
      appId: "<APP_ID>"
    };
    ```
+
+   Dla Realtime Database potrzebne jest pole `databaseURL`, którego nie ma w konfiguracji Firestore. Adres skopiuj z konsoli (Realtime Database, nad drzewem danych).
 
    Klucz `apiKey` aplikacji webowej Firebase nie jest tajny, bo trafia do każdej przeglądarki. Dostęp do danych chronią reguły bazy z punktu 5. Nie wpisuj tu żadnych haseł ani kluczy serwisowych.
 5. W **Realtime Database → Rules** wklej reguły z `database.rules.json`. Gra zapisuje dane wyłącznie pod `kolo/rooms`. Jeśli w tej samej bazie działa inna gra (np. Crossword Duel), dopisz gałąź `"kolo"` obok jej reguł zamiast nadpisywać całość.
@@ -211,9 +217,10 @@ Interfejs warto sprawdzić ręcznie po każdej większej zmianie: pełna gra z b
 
 | Objaw | Przyczyna i rozwiązanie |
 |---|---|
-| Po wdrożeniu widać starą wersję | Service worker trzyma poprzednie pliki. Podbij `VERSION` w `sw.js` i odśwież stronę dwa razy. |
+| Po wdrożeniu widać starą wersję | Podbij `VERSION` w `sw.js` i odśwież stronę dwa razy. Od wersji 2.2.2 service worker sprawdza pliki na serwerze przy każdym wczytaniu, więc 10-minutowa pamięć GitHub Pages już nie opóźnia aktualizacji. Na komputerze można też użyć Ctrl + Shift + R. |
 | „Tryb online wymaga projektu Firebase” | `js/firebase-config.js` ma `null`. Uzupełnij konfigurację. |
 | „Logowanie anonimowe jest wyłączone” | Włącz **Anonymous** w Firebase Authentication. |
+| „Can't determine Firebase Database URL” albo brak połączenia | `databaseURL` w `js/firebase-config.js` nie zgadza się z adresem bazy. Skopiuj go z konsoli (Realtime Database, adres nad drzewem danych). |
 | „permission_denied” w konsoli | Reguły bazy nie zawierają gałęzi `kolo`. Wklej `database.rules.json` albo dopisz gałąź. |
 | Gra nie działa offline po aktualizacji Crossword Duel | Crossword skasował cache Koła (opis w sekcji PWA). Wejdź raz do gry z internetem albo popraw `sw.js` Crosswordu. |
 | Chrome pisze, że aplikacja jest już zainstalowana | Sprawdź `id` w obu manifestach (DevTools → Application → Manifest). Muszą się różnić. |
@@ -223,6 +230,7 @@ Interfejs warto sprawdzić ręcznie po każdej większej zmianie: pełna gra z b
 
 | Wersja | Zmiany |
 |---|---|
+| 2.2.2 | Service worker zawsze sprawdza pliki na serwerze (bez 10-minutowego opóźnienia GitHub Pages), `js/firebase-config.js` działa offline, czcionki w stałej pamięci `kf-fonts`, konfiguracja Firebase uzupełniona |
 | 2.2 | Oprawa Modern Teal Signature (tokeny, oba motywy, ikony liniowe), stałe `id` w manifeście, izolacja cache od innych gier na domenie, spójne domyślne ustawienia poziomu „Średni” |
 | 2.1 | Gra zgodna z instrukcją: Niespodzianka 1000 i 10 000 w każdej rundzie, pauza zatrzymuje zegar, Spacja i Enter zawsze działają, polskie litery przez AltGr, pełna lista odrzuconych haseł |
 | 2.0 | Przebudowa: silnik z walidacją, rundy, finał, boty, edytor haseł, tryb online, PWA |
