@@ -668,7 +668,7 @@
       const n = $('onlineNotice');
       const ready = KF.Online.configured();
       n.hidden = ready;
-      if (!ready) n.innerHTML = 'Tryb online wymaga projektu Firebase. Uzupełnij plik <code>js/firebase-config.js</code> i włącz logowanie anonimowe oraz Realtime Database (instrukcja w README). Gra lokalna działa bez tego.';
+      if (!ready) n.innerHTML = 'Tryb online wymaga projektu Firebase. Uzupełnij plik <code>js/firebase-config.js</code> i włącz logowanie anonimowe oraz Realtime Database (instrukcja w KONFIGURACJA.md). Gra lokalna działa bez tego.';
       $('btnCreateRoom').disabled = !ready; $('btnJoinRoom').disabled = !ready;
       const last = get('kf-online-last', null);
       $('btnRejoin').hidden = !(ready && last && Date.now() - last.at < 6 * 3600 * 1000);
