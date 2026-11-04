@@ -259,6 +259,7 @@
     s.spin = null;
     s.pendingMystery = null;
     s.lastWinner = p.id;
+    s.lastRound = { player: p.id, amount, earned, auto: !!auto };
     s.phase = 'ROUND_OVER';
     ev.push({ t: 'roundWon', player: p.id, amount, earned, auto: !!auto, answer: currentPuzzle(s).text, scores: scores(s) });
   }
@@ -360,9 +361,9 @@
           return ok(s, ev);
         }
         // Niespodzianka: zakład tylko wtedy, gdy hasło nie zostało właśnie odsłonięte do końca.
-        const m = multFor(s.round);
-        const safe = round50(MYSTERY_SAFE_PER_LETTER * m) * count;
-        const risk = round50(MYSTERY_RISK * m);
+        // Stałe kwoty w każdej rundzie: 1000 za literę albo zakład o 10 000.
+        const safe = MYSTERY_SAFE_PER_LETTER * count;
+        const risk = MYSTERY_RISK;
         ev.push({ t: 'letter', player: cur.id, letter: L, count, positions, gain: 0, scores: scores(s) });
         if (letterInfo(s).complete) {
           cur.roundBank += safe;
@@ -442,7 +443,13 @@
 
       case 'timeout': {
         if (s.phase === 'MYSTERY_CHOICE') {
-          return apply(prev, { type: 'mystery', choice: 'safe' }, rng);
+          // Litera była trafiona, więc bezpieczna nagroda się należy, ale kolej przechodzi dalej.
+          const pm = s.pendingMystery;
+          cur.roundBank += pm.safe;
+          ev.push({ t: 'mysteryResult', player: cur.id, choice: 'safe', amount: pm.safe, auto: true, scores: scores(s) });
+          ev.push({ t: 'timeout', player: cur.id });
+          nextTurn(s, ev, 'timeout');
+          return ok(s, ev);
         }
         if (s.phase !== 'IDLE' && s.phase !== 'CALL_CONSONANT') return fail('Brak aktywnego ruchu.');
         ev.push({ t: 'timeout', player: cur.id });
@@ -567,7 +574,8 @@
       consonantsLeft: info.consonantsLeft,
       vowelsLeft: info.vowelsLeft,
       final,
-      lastWinner: s.lastWinner
+      lastWinner: s.lastWinner,
+      lastRound: s.lastRound || null
     };
   }
 

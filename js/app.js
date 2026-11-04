@@ -18,10 +18,10 @@
     reducedMotion: false, autoNext: false, preset: 'medium'
   };
   const PRESETS = {
-    easy: { puzzleDifficulty: 'easy', turnTime: 0, finalTime: 20, rounds: 3, bot: 'easy', info: 'Łatwe hasła, bez limitu czasu, 20 s w finale, boty łatwe.' },
-    medium: { puzzleDifficulty: 'mixed', turnTime: 45, finalTime: 15, rounds: 4, bot: 'medium', info: 'Hasła od łatwych do trudnych, 45 s na ruch, 15 s w finale, boty średnie.' },
-    hard: { puzzleDifficulty: 'hard', turnTime: 20, finalTime: 10, rounds: 4, bot: 'hard', info: 'Trudne hasła, 20 s na ruch, 10 s w finale, boty trudne.' },
-    custom: { info: 'Własne ustawienia. Zmiana któregokolwiek pola przełącza na ten tryb.' }
+    easy: { puzzleDifficulty: 'easy', turnTime: 0, bot: 'easy', info: 'Łatwe hasła, bez limitu czasu na ruch, boty łatwe.' },
+    medium: { puzzleDifficulty: 'mixed', turnTime: 45, bot: 'medium', info: 'Hasła od łatwych do trudnych, 45 s na ruch, boty średnie.' },
+    hard: { puzzleDifficulty: 'hard', turnTime: 20, bot: 'hard', info: 'Trudne hasła, 20 s na ruch, boty trudne.' },
+    custom: { info: 'Hasła, czas na ruch i poziom każdego bota ustawiasz ręcznie.' }
   };
   const SETTINGS_KEY = 'kf-settings-v2';
   const SAVE_KEY = 'kf-save-v2';
@@ -66,6 +66,7 @@
       if (name === 'setup') this.renderSetup();
       if (name === 'settings') this.syncSettingsForm();
       if (name === 'online') this.refreshOnline();
+      if (name === 'rules') this.renderRules();
       const first = document.querySelector(`#scr-${name} .panel-body input, #scr-${name} .menu-buttons button`);
       if (first && name !== 'game') setTimeout(() => first.focus({ preventScroll: true }), 50);
     },
@@ -210,15 +211,20 @@
 
     // ---------- konfiguracja gry ----------
     initSetup() {
-      this.setupPlayers = get(PLAYERS_KEY, null) || [
-        { name: 'Gracz 1', type: 'human', level: 'medium' },
-        { name: 'Gracz 2', type: 'human', level: 'medium' },
-        { name: 'Gracz 3', type: 'human', level: 'medium' }
-      ];
+      const defaults = () => [1, 2, 3].map((n) => ({ name: `Gracz ${n}`, type: 'human', level: 'medium' }));
+      let saved = get(PLAYERS_KEY, null);
+      const valid = Array.isArray(saved) && saved.length >= 2 && saved.length <= 4 && saved.every((p) => p && typeof p.name === 'string');
+      // Wersja 2.0 miała domyślnie Kuba, Mati, Seba. Jeśli nikt ich nie zmieniał, zastępujemy je „Gracz N”.
+      const oldDefaults = valid && saved.map((p) => p.name).join('|') === 'Kuba|Mati|Seba';
+      if (!valid) saved = defaults();
+      else if (oldDefaults) saved = saved.map((p, i) => Object.assign({}, p, { name: `Gracz ${i + 1}` }));
+      this.setupPlayers = saved;
+      if (oldDefaults) set(PLAYERS_KEY, saved);
       $('btnAddPlayer').addEventListener('click', () => {
         if (this.setupPlayers.length >= 4) return;
         const lvl = (PRESETS[this.settings.preset] || {}).bot || 'medium';
         this.setupPlayers.push({ name: this._freeName('Gracz'), type: 'human', level: lvl });
+        this.savePlayers();
         this.renderSetup();
       });
       $('presetSeg').addEventListener('click', (e) => {
@@ -226,8 +232,11 @@
         if (!b) return;
         this.applyPreset(b.dataset.preset);
       });
-      ['setupRounds', 'setupDiff', 'setupTurnTime'].forEach((id) => $(id).addEventListener('change', () => {
+      $('setupRounds').addEventListener('change', () => {
         this.settings.rounds = Number($('setupRounds').value);
+        this.saveSettings();
+      });
+      ['setupDiff', 'setupTurnTime'].forEach((id) => $(id).addEventListener('change', () => {
         this.settings.puzzleDifficulty = $('setupDiff').value;
         this.settings.turnTime = Number($('setupTurnTime').value);
         this.settings.preset = 'custom';
@@ -248,8 +257,9 @@
       const p = PRESETS[key];
       this.settings.preset = key;
       if (key !== 'custom') {
-        Object.assign(this.settings, { puzzleDifficulty: p.puzzleDifficulty, turnTime: p.turnTime, finalTime: p.finalTime, rounds: p.rounds });
+        Object.assign(this.settings, { puzzleDifficulty: p.puzzleDifficulty, turnTime: p.turnTime });
         this.setupPlayers.forEach((pl) => { if (pl.type === 'bot') pl.level = p.bot; });
+        this.savePlayers();
       }
       this.saveSettings();
       this.renderSetup();
@@ -268,22 +278,38 @@
         const [inp, type, lvl, rm] = [row.querySelector('input'), row.querySelector('.type'), row.querySelector('.lvl'), row.querySelector('.rm')];
         inp.value = p.name; type.value = p.type; lvl.value = p.level; lvl.disabled = p.type !== 'bot';
         rm.disabled = this.setupPlayers.length <= 2;
-        inp.addEventListener('input', () => { p.name = inp.value; $('setupError').textContent = ''; });
-        type.addEventListener('change', () => { p.type = type.value; lvl.disabled = p.type !== 'bot'; });
-        lvl.addEventListener('change', () => { p.level = lvl.value; });
-        rm.addEventListener('click', () => { this.setupPlayers.splice(i, 1); this.renderSetup(); });
+        inp.addEventListener('input', () => { p.name = inp.value; $('setupError').textContent = ''; this.savePlayers(); });
+        type.addEventListener('change', () => {
+          p.type = type.value;
+          const presetBot = (PRESETS[this.settings.preset] || {}).bot;
+          if (p.type === 'bot' && presetBot) { p.level = presetBot; lvl.value = presetBot; }
+          lvl.disabled = p.type !== 'bot';
+          this.savePlayers();
+        });
+        lvl.addEventListener('change', () => {
+          p.level = lvl.value;
+          const presetBot = (PRESETS[this.settings.preset] || {}).bot;
+          if (presetBot && p.level !== presetBot) { this.settings.preset = 'custom'; this.saveSettings(); this._renderPresetInfo(); }
+          this.savePlayers();
+        });
+        rm.addEventListener('click', () => { this.setupPlayers.splice(i, 1); this.savePlayers(); this.renderSetup(); });
         box.appendChild(row);
       });
       $('btnAddPlayer').disabled = this.setupPlayers.length >= 4;
       const s = this.settings;
-      $('presetSeg').querySelectorAll('button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.preset === s.preset)));
-      $('presetInfo').textContent = (PRESETS[s.preset] || PRESETS.custom).info;
+      this._renderPresetInfo();
       $('setupRounds').value = String(s.rounds);
       $('setupDiff').value = s.puzzleDifficulty;
       $('setupTurnTime').value = String(s.turnTime);
       if (!$('setupTurnTime').value) $('setupTurnTime').value = '0';
       $('setupFinal').checked = !!s.final;
     },
+    _renderPresetInfo() {
+      const s = this.settings;
+      $('presetSeg').querySelectorAll('button').forEach((b) => b.setAttribute('aria-checked', String(b.dataset.preset === s.preset)));
+      $('presetInfo').textContent = (PRESETS[s.preset] || PRESETS.custom).info;
+    },
+    savePlayers() { set(PLAYERS_KEY, this.setupPlayers); },
     engineSettings() {
       const s = this.settings;
       return { rounds: s.rounds, final: s.final, finalTime: s.finalTime, vowelCost: s.vowelCost, roundMinimum: s.roundMinimum, turnTime: s.turnTime, puzzleDifficulty: s.puzzleDifficulty, lenientDiacritics: s.lenientDiacritics };
@@ -301,12 +327,12 @@
       const players = this.setupPlayers.map((p, i) => ({ name: String(p.name || '').trim() || `Gracz ${i + 1}`, type: p.type, level: p.level }));
       const err = E.validatePlayers(players);
       if (err) { $('setupError').textContent = err; return; }
-      set(PLAYERS_KEY, this.setupPlayers);
+      this.savePlayers();
       const r = this.buildGame(players);
       if (!r.ok) { $('setupError').textContent = r.error; return; }
       if (r.warning) this.toast(r.warning);
-      this.lastOfflinePlayers = players;
       Sound.unlock();
+      this.saveGame(r.state);
       this.game.start({ mode: 'offline', state: r.state });
     },
     playAgain() {
@@ -315,6 +341,7 @@
       const players = this.game.view.players.map((p) => ({ name: p.name, type: p.type, level: p.level }));
       const r = this.buildGame(players);
       if (!r.ok) { this.toast(r.error, true); this.show('setup'); return; }
+      this.saveGame(r.state);
       this.game.start({ mode: 'offline', state: r.state });
     },
     endGame(fromPause) {
@@ -545,9 +572,25 @@
         const m = $('pzIoMsg');
         if (!r.ok) { m.textContent = r.error; m.className = 'form-msg bad'; }
         else {
-          let t = `Dodano ${plural(r.added, 'hasło', 'hasła', 'haseł')}.`;
-          if (r.rejected.length) t += ` Odrzucono ${r.rejected.length}: ` + r.rejected.slice(0, 3).map((x) => `poz. ${x.line} (${x.error.replace(/\.$/, '')})`).join('; ') + (r.rejected.length > 3 ? '…' : '');
-          m.textContent = t; m.className = 'form-msg ' + (r.added ? 'good' : 'bad');
+          m.textContent = `Dodano ${plural(r.added, 'hasło', 'hasła', 'haseł')}.` + (r.rejected.length ? ` Odrzucono ${r.rejected.length}.` : '');
+          m.className = 'form-msg ' + (r.added ? 'good' : 'bad');
+          if (r.rejected.length) {
+            // Pełna lista odrzuconych pozycji z powodem
+            const det = document.createElement('details');
+            det.className = 'rejected';
+            det.open = true;
+            const sum = document.createElement('summary');
+            sum.textContent = 'Które hasła odrzucono i dlaczego';
+            det.appendChild(sum);
+            const ul = document.createElement('ul');
+            r.rejected.forEach((x) => {
+              const li = document.createElement('li');
+              li.textContent = `Pozycja ${x.line}${x.text ? ` „${x.text}”` : ''}: ${x.error.replace(/\.$/, '')}`;
+              ul.appendChild(li);
+            });
+            det.appendChild(ul);
+            m.appendChild(det);
+          }
         }
         $('pzImport').value = '';
         this.renderPuzzleList();
@@ -564,7 +607,7 @@
         <h3>Przebieg tury</h3>
         <ul>
           <li><b>Zakręć kołem</b> i wybierz spółgłoskę. Każde wystąpienie litery to kwota z koła. Trafiasz, grasz dalej. Pudłujesz, tracisz kolejkę.</li>
-          <li><b>Kup samogłoskę</b> przed zakręceniem, płacąc punktami zdobytymi <i>w tej rundzie</i> (domyślnie ${s.vowelCost} pkt). Samogłoski: A Ą E Ę I O Ó U Y.</li>
+          <li><b>Kup samogłoskę</b> przed zakręceniem, płacąc ${s.vowelCost} pkt zdobytymi <i>w tej rundzie</i>. Samogłoski: A Ą E Ę I O Ó U Y.</li>
           <li><b>Odgadnij hasło</b> przed zakręceniem albo po trafionej literze. Błąd oznacza utratę kolejki.</li>
           <li><b>Pas</b> oddaje turę następnej osobie.</li>
         </ul>
@@ -572,12 +615,12 @@
         <ul>
           <li><b>BANKRUT</b> zeruje punkty z bieżącej rundy i zabiera kolejkę. Pula łączna z poprzednich rund jest bezpieczna.</li>
           <li><b>STOP</b> zabiera kolejkę bez utraty punktów.</li>
-          <li><b>Niespodzianka</b>. Po trafionej spółgłosce wybierasz 1000 pkt za każdą literę albo zakład 50 na 50 o 10 000 pkt. Przegrany zakład działa jak BANKRUT. Po odkryciu karty pole znika z koła do końca rundy.</li>
+          <li><b>Niespodzianka</b> działa po trafionej spółgłosce. Wybierasz 1000 pkt za każdą odsłoniętą literę albo ryzyko 50 na 50 o 10 000 pkt. Przegrane ryzyko działa jak BANKRUT. Gdy zaryzykujesz, karta zostaje odkryta i pole znika z koła do końca rundy. Przy bezpiecznym wyborze pole zostaje.</li>
         </ul>
         <h3>Punkty i rundy</h3>
         <ul>
           <li>Koło ma 24 pola. W 1. rundzie kwoty od ${w[0]} do ${w[w.length - 1]}, w kolejnych rosną (×1,25, ×1,5, ×1,75, ×2).</li>
-          <li>Zwycięzca rundy dopisuje punkty rundy do puli łącznej, ale nie mniej niż gwarancja (domyślnie ${fmt(s.roundMinimum)} pkt). Pozostali tracą punkty z tej rundy.</li>
+          <li>Zwycięzca rundy dopisuje punkty rundy do puli łącznej, ale nie mniej niż ${s.roundMinimum ? fmt(s.roundMinimum) + ' pkt' : 'zero (gwarancja wyłączona)'}. Pozostali tracą punkty z tej rundy.</li>
           <li>Gdy odsłoni się ostatnia litera, rundę wygrywa osoba, która ją odsłoniła.</li>
         </ul>
         <h3>Finał</h3>
@@ -590,7 +633,7 @@
           <tr><td>Spacja</td><td>zakręć kołem</td></tr>
           <tr><td>Litera na klawiaturze</td><td>wybór litery, gdy jest aktywna</td></tr>
           <tr><td>Enter</td><td>odgadnij hasło / zatwierdź litery finału / następna runda</td></tr>
-          <tr><td>Esc</td><td>pauza, anulowanie zakupu samogłoski</td></tr>
+          <tr><td>Esc</td><td>pauza (online menu gry), anulowanie zakupu samogłoski</td></tr>
         </tbody></table>`;
     },
 
@@ -687,7 +730,7 @@
       $('lobbyWait').hidden = isHost;
       $('lobbyError').textContent = '';
       const s = room.meta.settings || this.engineSettings();
-      $('lobbySettingsInfo').textContent = `${s.rounds} rundy${s.final ? ' + finał' : ''} · hasła: ${P.DIFF_LABEL[s.puzzleDifficulty].toLowerCase()} · czas na ruch: ${s.turnTime ? s.turnTime + ' s' : 'bez limitu'}`;
+      $('lobbySettingsInfo').textContent = `${plural(s.rounds, 'runda', 'rundy', 'rund')}${s.final ? ' + finał' : ''} · hasła: ${P.DIFF_LABEL[s.puzzleDifficulty].toLowerCase()} · czas na ruch: ${s.turnTime ? s.turnTime + ' s' : 'bez limitu'}`;
       this._unwatch();
       this._lobbyUnsubs = [
         room.on('players', (pl) => this.renderLobby(pl || {})),

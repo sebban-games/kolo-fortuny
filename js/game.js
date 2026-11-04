@@ -47,7 +47,7 @@
       this.room = opts.room || null;
       this.myId = opts.myId || null;
       this.busy = false; this.paused = false; this.vowelMode = false; this.finalPicks = [];
-      this.lastSeq = -1; this.hostQueue = []; this.displayed = {}; this.boardSig = null; this.recorded = false; this.finalDeadline = null;
+      this.lastSeq = -1; this.hostQueue = []; this.displayed = {}; this.boardSig = null; this.recorded = false; this.deadline = null; this.lastRoundWon = null;
       this.chain = Promise.resolve();
       this.state = opts.state || null;
       const view = opts.view || E.publicView(this.state);
@@ -175,28 +175,43 @@
       if (!this.authority || this.paused) return;
       const cur = v.players[v.current];
       if (v.phase === 'FINAL_SOLVE') {
-        const total = v.settings.finalTime;
-        const first = !this.finalDeadline;
-        if (first) this.finalDeadline = performance.now() + total * 1000;
-        const left = Math.max(0.1, (this.finalDeadline - performance.now()) / 1000);
-        this.startTimer(left, () => this.systemAct({ type: 'finalTimeout' }), total);
-        if (cur.type === 'bot' && first) {
+        // Jeden termin na cały finał: błędne próby go nie przedłużają.
+        const left = this.countdown('final:' + v.round, v.settings.finalTime, () => this.systemAct({ type: 'finalTimeout' }));
+        if (cur.type === 'bot' && !this.timers.finalBot) {
           const plan = Bot.finalPlan(this.state);
-          if (plan.solves) this.timers.finalBot = setTimeout(() => this.applyLocal({ type: 'finalSolve', by: cur.id, text: E.currentPuzzle(this.state).text, bot: true }), plan.after * 1000);
+          if (plan.solves && plan.after < left) this.timers.finalBot = setTimeout(() => this.applyLocal({ type: 'finalSolve', by: cur.id, text: E.currentPuzzle(this.state).text, bot: true }), plan.after * 1000);
         }
         return;
       }
       if (cur.type === 'bot') { this.scheduleBot(); return; }
-      if (cur.id && this.mode === 'host' && this.presence[cur.id] === false && v.settings.turnTime === 0) {
-        // Gracz rozłączony i brak limitu: po 20 s pomijamy jego turę.
-        this.startTimer(20, () => this.systemAct({ type: 'skip' }));
+      const turnPhase = ['IDLE', 'CALL_CONSONANT', 'MYSTERY_CHOICE'].includes(v.phase);
+      const disconnected = this.mode === 'host' && this.presence[cur.id] === false;
+      if (disconnected && v.settings.turnTime === 0) {
+        // Gracz rozłączony, a limitu nie ma: po 20 s jego tura przechodzi dalej (w finale gra wybiera litery za niego).
+        if (turnPhase) this.countdown('off:' + v.seq, 20, () => this.systemAct({ type: 'timeout' }));
+        else if (v.phase === 'FINAL_PICK') this.countdown('off:' + v.seq, 20, () => this.autoFinalPick());
         return;
       }
-      if (v.settings.turnTime > 0 && ['IDLE', 'CALL_CONSONANT', 'MYSTERY_CHOICE'].includes(v.phase)) {
-        this.startTimer(v.settings.turnTime, () => this.systemAct({ type: 'timeout' }));
+      if (v.settings.turnTime > 0 && turnPhase) {
+        this.countdown('turn:' + v.seq, v.settings.turnTime, () => this.systemAct({ type: 'timeout' }));
       } else if (v.phase === 'FINAL_PICK' && v.settings.turnTime > 0) {
-        this.startTimer(Math.max(30, v.settings.turnTime), () => this.autoFinalPick());
+        this.countdown('pick:' + v.seq, Math.max(30, v.settings.turnTime), () => this.autoFinalPick());
       }
+    }
+
+    // Odliczanie z pamięcią terminu: ponowne wywołanie dla tego samego klucza (np. po pauzie
+    // albo zmianie obecności gracza) kontynuuje zegar zamiast liczyć od nowa.
+    countdown(key, totalSec, onExpire) {
+      const now = performance.now();
+      const d = this.deadline;
+      if (!d || d.key !== key) this.deadline = { key, at: now + totalSec * 1000, frozen: null };
+      else if (d.frozen != null) { d.at = now + d.frozen; d.frozen = null; }
+      const left = Math.max(0.1, (this.deadline.at - now) / 1000);
+      this.startTimer(left, onExpire, totalSec);
+      return left;
+    }
+    freezeCountdown() {
+      if (this.deadline && this.deadline.frozen == null) this.deadline.frozen = Math.max(0, this.deadline.at - performance.now());
     }
 
     autoFinalPick() {
@@ -254,6 +269,7 @@
       this.clearTimer();
       clearTimeout(this.timers.bot);
       clearTimeout(this.timers.finalBot);
+      this.timers.finalBot = null;
       clearTimeout(this.timers.auto);
       clearTimeout(this.timers.pending);
       if (this.mode === 'host' && this.room) this.room.setTimer(null);
@@ -353,7 +369,7 @@
           case 'mysteryLanded':
             Sound.mystery();
             this.banner('NIESPODZIANKA', 'purple');
-            this.announce('Niespodzianka! Trafiona spółgłoska ją odkryje');
+            this.announce('Niespodzianka! Trafiona spółgłoska da wybór nagrody');
             await this.wait(1400);
             break;
           case 'letter':
@@ -385,7 +401,7 @@
             } else {
               Sound.value();
               this.banner(`+${fmt(e.amount)}`, 'gold');
-              this.announce(`${nm} bierze bezpieczne ${fmt(e.amount)} pkt`);
+              this.announce(e.auto ? `${nm} dostaje bezpieczne ${fmt(e.amount)} pkt` : `${nm} bierze bezpieczne ${fmt(e.amount)} pkt`);
             }
             this.updateScores(e.scores);
             await this.wait(1500);
@@ -725,7 +741,7 @@
           return `${cur.name}, kręć kołem, kup samogłoskę albo odgadnij hasło`;
         case 'CALL_CONSONANT':
           if (!me) return who;
-          return v.spin && v.spin.kind === 'mystery' ? 'Wybierz spółgłoskę, żeby odkryć Niespodziankę' : `Wybierz spółgłoskę za ${fmt(v.spin && v.spin.value)} pkt`;
+          return v.spin && v.spin.kind === 'mystery' ? 'Wybierz spółgłoskę, żeby zagrać o Niespodziankę' : `Wybierz spółgłoskę za ${fmt(v.spin && v.spin.value)} pkt`;
         case 'MYSTERY_CHOICE': return me ? 'Bezpieczna nagroda czy ryzyko?' : who;
         case 'FINAL_PICK': return me ? 'Kliknij 3 spółgłoski i 1 samogłoskę, potem zatwierdź' : `${cur.name} wybiera litery do finału`;
         case 'FINAL_SOLVE': return me ? 'Wpisz hasło. Możesz próbować wiele razy, dopóki biegnie czas' : `${cur.name} odgaduje hasło finałowe`;
@@ -781,10 +797,19 @@
           if ($('ovRound').hidden && $('ovEnd').hidden) this.openPause();
           return;
         }
-        if (this.modalOpen || e.ctrlKey || e.metaKey || e.altKey && !/^[ąćęłńóśźż]$/i.test(e.key)) return;
+        // Na polskiej klawiaturze w Windows AltGr = Ctrl + Alt, więc ą, ę, ł itd. przychodzą z tymi modyfikatorami.
+        const plChar = /^[ąćęłńóśźż]$/i.test(e.key);
+        if (this.modalOpen || (!plChar && (e.ctrlKey || e.metaKey || e.altKey))) return;
         const tag = (e.target && e.target.tagName) || '';
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-        if (tag === 'BUTTON' && !e.target.classList.contains('key') && (e.key === ' ' || e.key === 'Enter')) return;
+        // Przyciski w oknach (koniec rundy, koniec gry) i w panelu Niespodzianki działają normalnie.
+        // Na pozostałych przyciskach gry Spacja i Enter robią to, co w instrukcji, a nie „kliknięcie”
+        // przycisku, który akurat ma fokus (np. Pas po poprzednim graczu).
+        if (tag === 'BUTTON' && (e.key === ' ' || e.key === 'Enter')) {
+          const inGame = e.target.closest('#scr-game') && !e.target.closest('#mysteryPanel');
+          if (!inGame) return;
+          e.target.blur();
+        }
         if (e.key === ' ') {
           e.preventDefault();
           if (!$('btnSpin').disabled) $('btnSpin').click();
@@ -854,7 +879,7 @@
     openPause() {
       if (this.modalOpen) return;
       const wasPaused = this.paused;
-      if (this.mode === 'offline') { this.paused = true; this.clearTimers(); this.render(); }
+      if (this.mode === 'offline') { this.freezeCountdown(); this.paused = true; this.clearTimers(); this.render(); }
       const resume = () => {
         this.modalOpen = null;
         if (this.mode === 'offline' && !wasPaused) { this.paused = false; this.render(); if (!this.busy) this.afterSettle(); }
@@ -881,13 +906,13 @@
 
     showRoundOver() {
       const v = this.view;
-      const e = this.lastRoundWon || { player: v.lastWinner, amount: 0, earned: 0, answer: v.answer };
+      const e = v.lastRound || this.lastRoundWon || { player: v.lastWinner, amount: 0, earned: 0 };
       const ov = $('ovRound');
       $('ovRoundKicker').textContent = `Koniec rundy ${v.round + 1}`;
       $('ovRoundTitle').textContent = `Rundę wygrywa ${this.name(e.player)}`;
       $('ovRoundAmount').textContent = `+${fmt(e.amount)} pkt`;
       $('ovRoundNote').textContent = e.amount > e.earned ? `Zdobyte w rundzie ${fmt(e.earned)}, wypłacono gwarancję ${fmt(e.amount)}` : (e.auto ? 'Ostatnia litera odsłoniła całe hasło' : '');
-      $('ovRoundAnswer').textContent = v.answer || e.answer;
+      $('ovRoundAnswer').textContent = v.answer || (this.lastRoundWon && this.lastRoundWon.answer) || '';
       const tbl = $('ovRoundTable');
       tbl.innerHTML = '';
       v.players.slice().sort((a, b) => b.total - a.total).forEach((p) => {
