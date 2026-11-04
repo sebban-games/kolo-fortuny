@@ -2,7 +2,7 @@
    Na tej samej domenie (sebban-games.github.io) działają inne gry, a pamięć podręczna jest wspólna
    dla całej domeny, dlatego wszystkie cache tej gry mają prefiks „kf-” i tylko takie są usuwane. */
 const PREFIX = 'kf-';
-const VERSION = PREFIX + '2.2.0';
+const VERSION = PREFIX + '2.2.1';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest',
   'js/firebase-config.js', 'js/engine.js', 'js/puzzles.js', 'js/bot.js', 'js/audio.js',
