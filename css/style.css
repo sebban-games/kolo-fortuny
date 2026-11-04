@@ -519,3 +519,8 @@ input[type="range"] { accent-color: var(--gold); width: 100%; }
 @media (max-width: 640px) {
   .mystery-panel { position: fixed; inset: 0; z-index: 25; background: rgba(8, 4, 26, 0.55); backdrop-filter: blur(4px); }
 }
+
+/* lista odrzuconych haseł przy imporcie */
+.form-msg .rejected { margin: 6px 0 10px; font-weight: 500; color: var(--text); }
+.form-msg .rejected summary { cursor: pointer; color: var(--muted); font-weight: 600; }
+.form-msg .rejected ul { margin: 6px 0 0 1.2em; display: grid; gap: 2px; max-height: 180px; overflow: auto; font-size: 0.85rem; }
