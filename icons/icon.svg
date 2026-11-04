@@ -1,20 +1,22 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <radialGradient id="bg" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="#3a1d8a"/><stop offset="1" stop-color="#0c0724"/></radialGradient>
-    <radialGradient id="hub" cx="40%" cy="35%" r="70%"><stop offset="0" stop-color="#fff3c4"/><stop offset=".5" stop-color="#e6b43c"/><stop offset="1" stop-color="#6b4308"/></radialGradient>
+    <radialGradient id="bg" cx="50%" cy="38%" r="75%"><stop offset="0" stop-color="#22333C"/><stop offset="1" stop-color="#101A20"/></radialGradient>
+    <linearGradient id="ptr" x1="0" x2="1"><stop offset="0" stop-color="#75DDD0"/><stop offset=".55" stop-color="#13B8A6"/><stop offset="1" stop-color="#087F75"/></linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <circle cx="256" cy="272" r="186" fill="#c48a1e"/>
-  <g transform="translate(256 272)">
-    <path d="M0 0 L0 -168 A168 168 0 0 1 118.8 -118.8 Z" fill="#e8364f"/>
-    <path d="M0 0 L118.8 -118.8 A168 168 0 0 1 168 0 Z" fill="#ff8a1f"/>
-    <path d="M0 0 L168 0 A168 168 0 0 1 118.8 118.8 Z" fill="#ffd23f"/>
-    <path d="M0 0 L118.8 118.8 A168 168 0 0 1 0 168 Z" fill="#3fbf5f"/>
-    <path d="M0 0 L0 168 A168 168 0 0 1 -118.8 118.8 Z" fill="#17b3a3"/>
-    <path d="M0 0 L-118.8 118.8 A168 168 0 0 1 -168 0 Z" fill="#2f7cf6"/>
-    <path d="M0 0 L-168 0 A168 168 0 0 1 -118.8 -118.8 Z" fill="#7b4cf0"/>
-    <path d="M0 0 L-118.8 -118.8 A168 168 0 0 1 0 -168 Z" fill="#111216"/>
-    <circle r="54" fill="url(#hub)" stroke="#5b3a08" stroke-width="6"/>
+  <circle cx="256" cy="276" r="184" fill="#19262E" stroke="#13B8A6" stroke-opacity=".6" stroke-width="4"/>
+  <g transform="translate(256 276)">
+    <path d="M0 0 L0 -164 A164 164 0 0 1 116 -116 Z" fill="#13B8A6"/>
+    <path d="M0 0 L116 -116 A164 164 0 0 1 164 0 Z" fill="#E6A23C"/>
+    <path d="M0 0 L164 0 A164 164 0 0 1 116 116 Z" fill="#087F75"/>
+    <path d="M0 0 L116 116 A164 164 0 0 1 0 164 Z" fill="#558FC5"/>
+    <path d="M0 0 L0 164 A164 164 0 0 1 -116 116 Z" fill="#299D72"/>
+    <path d="M0 0 L-116 116 A164 164 0 0 1 -164 0 Z" fill="#D95C61"/>
+    <path d="M0 0 L-164 0 A164 164 0 0 1 -116 -116 Z" fill="#75DDD0"/>
+    <path d="M0 0 L-116 -116 A164 164 0 0 1 0 -164 Z" fill="#0B1216"/>
+    <circle r="50" fill="#19262E" stroke="#13B8A6" stroke-width="6"/>
+    <circle r="22" fill="#101A20"/>
   </g>
-  <path d="M256 128 L226 52 Q226 34 256 34 Q286 34 286 52 Z" fill="#ffd23f" stroke="#5b3a08" stroke-width="8"/>
+  <path d="M256 132 L228 62 Q228 40 256 40 Q284 40 284 62 Z" fill="url(#ptr)" stroke="#0A4F49" stroke-width="5"/>
+  <circle cx="256" cy="64" r="9" fill="#F4FBFA"/>
 </svg>

@@ -6,7 +6,8 @@
   const $ = (id) => document.getElementById(id);
   const fmt = (n) => Number(n || 0).toLocaleString('pl-PL');
   const get = P._lsGet, set = P._lsSet;
-  const PCOLORS = ['#e8364f', '#ffd23f', '#2f9bf6', '#3fbf5f'];
+  const PCOLORS = ['var(--player-1)', 'var(--player-2)', 'var(--player-3)', 'var(--player-4)'];
+  const icon = (n, cls) => `<svg class="i${cls ? ' ' + cls : ''}" aria-hidden="true"><use href="#i-${n}"/></svg>`;
   // Polska odmiana: 1 hasło, 2 hasła, 5 haseł
   const plural = (n, one, few, many) => {
     const t = n % 10, h = n % 100;
@@ -15,7 +16,9 @@
 
   const UI_DEFAULTS = {
     sound: true, volume: 0.7, theme: 'dark', animSpeed: 'normal', botSpeed: 'normal',
-    reducedMotion: false, autoNext: false, preset: 'medium'
+    reducedMotion: false, autoNext: false, preset: 'medium',
+    // wartości poziomu „Średni”, żeby domyślny poziom zgadzał się z polami formularza
+    turnTime: 45, puzzleDifficulty: 'mixed'
   };
   const PRESETS = {
     easy: { puzzleDifficulty: 'easy', turnTime: 0, bot: 'easy', info: 'Łatwe hasła, bez limitu czasu na ruch, boty łatwe.' },
@@ -35,6 +38,9 @@
 
     init() {
       this.settings = Object.assign({}, E.DEFAULT_SETTINGS, UI_DEFAULTS, get(SETTINGS_KEY, {}));
+      // Jeśli zapisane wartości nie pasują do zaznaczonego poziomu (np. po starszej wersji), pokazujemy „Własny”.
+      const pr = PRESETS[this.settings.preset];
+      if (!pr || (pr.turnTime !== undefined && (pr.turnTime !== this.settings.turnTime || pr.puzzleDifficulty !== this.settings.puzzleDifficulty))) this.settings.preset = 'custom';
       if (root.matchMedia && root.matchMedia('(prefers-reduced-motion: reduce)').matches && get(SETTINGS_KEY, null) === null) this.settings.reducedMotion = true;
       this.applyTheme();
       Sound.setEnabled(this.settings.sound);
@@ -183,7 +189,7 @@
       document.documentElement.dataset.theme = this.settings.theme;
       document.documentElement.classList.toggle('reduce', !!this.settings.reducedMotion);
       const dark = this.settings.theme === 'dark' || (this.settings.theme === 'auto' && !(root.matchMedia && root.matchMedia('(prefers-color-scheme: light)').matches));
-      document.querySelector('meta[name="theme-color"]').content = dark ? '#120a2e' : '#efeafe';
+      document.querySelector('meta[name="theme-color"]').content = dark ? '#101A20' : '#F5F8F7';
     },
     initSettings() {
       document.querySelectorAll('[data-set]').forEach((el) => {
@@ -274,7 +280,7 @@
           <input maxlength="16" aria-label="Imię gracza ${i + 1}" autocomplete="off" placeholder="Gracz ${i + 1}">
           <select class="type" aria-label="Typ gracza ${i + 1}"><option value="human">Człowiek</option><option value="bot">Komputer</option></select>
           <select class="lvl" aria-label="Poziom bota ${i + 1}"><option value="easy">Łatwy</option><option value="medium">Średni</option><option value="hard">Trudny</option></select>
-          <button class="rm" type="button" aria-label="Usuń gracza ${i + 1}" title="Usuń">✕</button>`;
+          <button class="rm" type="button" aria-label="Usuń gracza ${i + 1}" title="Usuń">${icon('x', 'sm')}</button>`;
         const [inp, type, lvl, rm] = [row.querySelector('input'), row.querySelector('.type'), row.querySelector('.lvl'), row.querySelector('.rm')];
         inp.value = p.name; type.value = p.type; lvl.value = p.level; lvl.disabled = p.type !== 'bot';
         rm.disabled = this.setupPlayers.length <= 2;
@@ -546,11 +552,11 @@
         li.querySelector('.meta').textContent = p.category + (p.builtIn ? ' · wbudowane' : '');
         li.querySelector('.pill').textContent = P.DIFF_LABEL[p.difficulty];
         const acts = li.querySelector('.acts');
-        if (!reveal) acts.insertAdjacentHTML('beforeend', `<button data-act="show" data-id="${p.id}" title="Pokaż">👁</button>`);
-        if (!p.builtIn) acts.insertAdjacentHTML('beforeend', `<button data-act="edit" data-id="${p.id}" title="Edytuj">✎</button><button data-act="del" data-id="${p.id}" title="Usuń">🗑</button>`);
+        if (!reveal) acts.insertAdjacentHTML('beforeend', `<button data-act="show" data-id="${p.id}" title="Pokaż" aria-label="Pokaż hasło">${icon('eye', 'sm')}</button>`);
+        if (!p.builtIn) acts.insertAdjacentHTML('beforeend', `<button data-act="edit" data-id="${p.id}" title="Edytuj" aria-label="Edytuj">${icon('edit', 'sm')}</button><button data-act="del" data-id="${p.id}" title="Usuń" aria-label="Usuń">${icon('trash', 'sm')}</button>`);
         ul.appendChild(li);
       });
-      if (!list.length) ul.innerHTML = '<li class="muted" style="display:block">Brak haseł spełniających filtr.</li>';
+      if (!list.length) ul.innerHTML = '<li class="empty-state">Brak haseł spełniających filtr. Zmień wyszukiwanie albo dodaj własne hasło powyżej.</li>';
     },
     _pzExport() {
       const custom = P.all().filter((p) => !p.builtIn);
@@ -753,9 +759,9 @@
         li.innerHTML = `<span class="dot ${p.bot || p.online !== false ? '' : 'off'}"></span><span class="nm"></span><span class="tag"></span>`;
         li.querySelector('.nm').textContent = p.name;
         li.querySelector('.tag').textContent = [id === room.meta.hostId ? 'host' : '', p.bot ? `bot ${({ easy: 'łatwy', medium: 'średni', hard: 'trudny' })[p.level]}` : '', id === room.myId ? 'ty' : ''].filter(Boolean).join(' · ');
-        li.style.borderLeft = `4px solid ${PCOLORS[i % 4]}`;
+        li.style.borderLeft = `3px solid ${PCOLORS[i % 4]}`;
         if (this.online.isHost && id !== room.myId) {
-          const b = document.createElement('button'); b.textContent = '✕'; b.title = 'Usuń z pokoju';
+          const b = document.createElement('button'); b.innerHTML = icon('x', 'sm'); b.title = 'Usuń z pokoju'; b.setAttribute('aria-label', 'Usuń z pokoju');
           b.addEventListener('click', () => room.removePlayer(id));
           li.appendChild(b);
         }

@@ -1,5 +1,8 @@
-/* Service worker: gra działa offline po pierwszym uruchomieniu. Zmień VERSION przy każdym wdrożeniu. */
-const VERSION = 'kf-2.1.0';
+/* Service worker: gra działa offline po pierwszym uruchomieniu. Zmień VERSION przy każdym wdrożeniu.
+   Na tej samej domenie (sebban-games.github.io) działają inne gry, a pamięć podręczna jest wspólna
+   dla całej domeny, dlatego wszystkie cache tej gry mają prefiks „kf-” i tylko takie są usuwane. */
+const PREFIX = 'kf-';
+const VERSION = PREFIX + '2.2.0';
 const SHELL = [
   './', 'index.html', 'css/style.css', 'manifest.webmanifest',
   'js/firebase-config.js', 'js/engine.js', 'js/puzzles.js', 'js/bot.js', 'js/audio.js',
@@ -12,7 +15,7 @@ self.addEventListener('install', (e) => {
 });
 
 self.addEventListener('activate', (e) => {
-  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => !k.startsWith(VERSION)).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
+  e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k.startsWith(PREFIX) && !k.startsWith(VERSION)).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
 });
 
 self.addEventListener('fetch', (e) => {

@@ -10,7 +10,7 @@
   const $ = (id) => document.getElementById(id);
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const fmt = (n) => Number(n || 0).toLocaleString('pl-PL');
-  const PCOLORS = ['#e8364f', '#ffd23f', '#2f9bf6', '#3fbf5f'];
+  const PCOLORS = ['var(--player-1)', 'var(--player-2)', 'var(--player-3)', 'var(--player-4)'];
   const LEVEL = { easy: 'łatwy', medium: 'średni', hard: 'trudny' };
 
   class GameController {
@@ -84,7 +84,8 @@
       this.speed = s.reducedMotion ? 0.35 : ({ slow: 1.3, normal: 1, fast: 0.6 })[s.animSpeed] || 1;
       this.wheel.speed = ({ slow: 1.2, normal: 1, fast: 0.65 })[s.animSpeed] || 1;
       this.wheel.reduced = !!s.reducedMotion;
-      $('btnSound').textContent = s.sound ? '🔊' : '🔇';
+      $('btnSound').innerHTML = `<svg class="i" aria-hidden="true"><use href="#i-${s.sound ? 'sound' : 'mute'}"/></svg>`;
+      $('btnSound').setAttribute('aria-label', s.sound ? 'Wycisz dźwięk' : 'Włącz dźwięk');
     }
 
     get authority() { return this.mode === 'offline' || this.mode === 'host'; }
@@ -687,7 +688,8 @@
       const prev = this.displayed[id] || { bank: 0, total: 0 };
       const el = d.querySelector('.pbank');
       d.querySelector('.tt').textContent = `Łącznie ${fmt(total)}`;
-      d.querySelector('.stars').textContent = '★'.repeat(won || 0);
+      d.querySelector('.stars').textContent = '●'.repeat(won || 0);
+      d.querySelector('.stars').title = won ? `Wygrane rundy: ${won}` : '';
       if (animate && prev.bank !== bank) {
         el.classList.remove('bump', 'drop'); void el.offsetWidth;
         el.classList.add(bank > prev.bank ? 'bump' : 'drop');
@@ -959,8 +961,9 @@
       pod.innerHTML = '';
       ranking.forEach((p, i) => {
         const li = document.createElement('li');
-        li.innerHTML = '<span></span><span></span>';
-        li.firstChild.textContent = `${['🥇', '🥈', '🥉', '4.'][i]} ${p.name}`;
+        li.innerHTML = '<span><span class="rank"></span><span class="pn"></span></span><span></span>';
+        li.querySelector('.rank').textContent = i + 1;
+        li.querySelector('.pn').textContent = p.name;
         li.lastChild.textContent = fmt(p.total) + ' pkt';
         pod.appendChild(li);
       });
@@ -1023,7 +1026,7 @@
       const dpr = Math.min(root.devicePixelRatio || 1, 2);
       this.c.width = root.innerWidth * dpr; this.c.height = root.innerHeight * dpr;
       this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      const colors = ['#ffc93c', '#ff3d81', '#45dcff', '#1fbf76', '#a57bff', '#ffffff'];
+      const colors = ['#13B8A6', '#75DDD0', '#D9F3EF', '#087F75', '#E6A23C', '#558FC5'];
       for (let i = 0; i < n; i++) {
         this.parts.push({
           x: root.innerWidth * (0.2 + Math.random() * 0.6), y: root.innerHeight * 0.35,

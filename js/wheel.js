@@ -7,8 +7,20 @@
   const TAU = Math.PI * 2;
   const E = root.KF.Engine;
 
-  const PALETTE = ['#e8364f', '#ff8a1f', '#ffd23f', '#3fbf5f', '#17b3a3', '#2f7cf6', '#7b4cf0', '#e94bb8'];
-  const TEXT_ON = { '#ffd23f': '#2b1a00', '#ff8a1f': '#2b1200' };
+  // Paleta pól koła: kolory marki i semantyczne Modern Teal Signature (gra może być kolorowa,
+  // ale bez barw spoza systemu). Jasne pola dostają ciemny napis, ciemne jasny.
+  const PALETTE = ['#13B8A6', '#E6A23C', '#087F75', '#558FC5', '#299D72', '#D95C61', '#75DDD0', '#8E7CC3'];
+  const TEXT_ON = { '#13B8A6': '#06201D', '#E6A23C': '#2A1C05', '#75DDD0': '#06201D' };
+  const FONT = 'Manrope, "Arial Black", system-ui, sans-serif';
+  const C = {
+    bankrupt: '#0B1216', bankruptText: '#F4FBFA',
+    stop: '#D9F3EF', stopText: '#D95C61',
+    mystery: '#0A4F49', mysteryMark: '#E6A23C', mysteryText: '#D9F3EF',
+    peg: '#D9F3EF', pegEdge: 'rgba(8,127,117,0.7)',
+    frame: ['#2C424D', '#22333C', '#19262E', '#101A20'], frameLine: 'rgba(19,184,166,0.55)',
+    bulbOn: ['#F4FBFA', '#75DDD0', 'rgba(19,184,166,0)'], bulbOff: '#2A3F48',
+    hub: ['#2C424D', '#19262E'], hubRing: 'rgba(19,184,166,0.85)', hubInner: '#101A20', hubText: '#13B8A6'
+  };
 
   function norm(a) { a %= TAU; return a < 0 ? a + TAU : a; }
 
@@ -33,6 +45,9 @@
       this._idleTimer = null;
       const ro = new ResizeObserver(() => this.resize());
       ro.observe(box);
+      if (document.fonts && document.fonts.load) {
+        document.fonts.load('800 32px Manrope').then(() => { this._render(); this.draw(); }).catch(() => {});
+      }
       this._idle();
     }
 
@@ -90,9 +105,9 @@
         const s = this.segments[i];
         const a0 = i * seg - Math.PI / 2;
         let fill, text, textColor = '#fff';
-        if (s === E.BANKRUT) { fill = '#111216'; text = 'BANKRUT'; }
-        else if (s === E.STOP) { fill = '#f2f2f5'; text = 'STOP'; textColor = '#c8102e'; }
-        else if (s === E.MYSTERY) { fill = '#3a1d7a'; text = '?'; }
+        if (s === E.BANKRUT) { fill = C.bankrupt; text = 'BANKRUT'; textColor = C.bankruptText; }
+        else if (s === E.STOP) { fill = C.stop; text = 'STOP'; textColor = C.stopText; }
+        else if (s === E.MYSTERY) { fill = C.mystery; text = '?'; }
         else {
           fill = PALETTE[colorIdx % PALETTE.length]; colorIdx++;
           text = String(s); textColor = TEXT_ON[fill] || '#fff';
@@ -102,19 +117,19 @@
         c.arc(0, 0, R, a0, a0 + seg);
         c.closePath();
         const g = c.createRadialGradient(0, 0, R * 0.15, 0, 0, R);
-        g.addColorStop(0, shade(fill, -0.25));
-        g.addColorStop(0.55, fill);
-        g.addColorStop(1, shade(fill, 0.12));
+        g.addColorStop(0, shade(fill, -0.18));
+        g.addColorStop(0.6, fill);
+        g.addColorStop(1, shade(fill, 0.06));
         c.fillStyle = g;
         c.fill();
         if (s === E.MYSTERY) {
           c.save(); c.clip();
           const sh = c.createLinearGradient(-R, -R, R, R);
-          sh.addColorStop(0, 'rgba(255,255,255,0)'); sh.addColorStop(0.5, 'rgba(255,215,90,0.35)'); sh.addColorStop(1, 'rgba(255,255,255,0)');
+          sh.addColorStop(0, 'rgba(255,255,255,0)'); sh.addColorStop(0.5, 'rgba(230,162,60,0.22)'); sh.addColorStop(1, 'rgba(255,255,255,0)');
           c.fillStyle = sh; c.fillRect(-R, -R, 2 * R, 2 * R);
           c.restore();
         }
-        c.strokeStyle = 'rgba(0,0,0,0.35)';
+        c.strokeStyle = 'rgba(6,16,20,0.35)';
         c.lineWidth = Math.max(1, R * 0.008);
         c.stroke();
 
@@ -128,17 +143,17 @@
         c.shadowColor = 'rgba(0,0,0,0.35)';
         c.shadowBlur = R * 0.012;
         if (s === E.MYSTERY) {
-          c.font = `900 ${Math.round(R * 0.2)}px "Archivo Black", "Arial Black", system-ui, sans-serif`;
-          c.fillStyle = '#ffd86b';
+          c.font = `800 ${Math.round(R * 0.2)}px ${FONT}`;
+          c.fillStyle = C.mysteryMark;
           c.save(); c.translate(R * 0.76, 0); c.rotate(Math.PI / 2); c.fillText('?', 0, 0); c.restore();
-          c.font = `900 ${Math.round(R * 0.038)}px "Archivo Black", "Arial Black", system-ui, sans-serif`;
-          c.fillStyle = '#fff';
+          c.font = `800 ${Math.round(R * 0.04)}px ${FONT}`;
+          c.fillStyle = C.mysteryText;
           [...'NIESPODZIANKA'].forEach((ch, k) => { c.save(); c.translate(R * (0.635 - k * 0.0335), 0); c.rotate(Math.PI / 2); c.fillText(ch, 0, 0); c.restore(); });
         } else {
           const chars = [...text];
           const fs = chars.length >= 7 ? 0.066 : chars.length >= 5 ? 0.075 : 0.092;
           const stepR = fs * (chars.length >= 7 ? 0.86 : 0.92);
-          c.font = `900 ${Math.round(R * fs)}px "Archivo Black", "Arial Black", system-ui, sans-serif`;
+          c.font = `800 ${Math.round(R * fs * 1.06)}px ${FONT}`;
           chars.forEach((ch, k) => {
             c.save();
             c.translate(R * (0.89 - k * stepR), 0);
@@ -154,18 +169,18 @@
         const a = i * seg - Math.PI / 2;
         c.beginPath();
         c.arc(Math.cos(a) * R * 0.965, Math.sin(a) * R * 0.965, R * 0.018, 0, TAU);
-        c.fillStyle = '#ffe9a8';
+        c.fillStyle = C.peg;
         c.fill();
-        c.strokeStyle = 'rgba(80,50,0,0.6)';
+        c.strokeStyle = C.pegEdge;
         c.lineWidth = R * 0.005;
         c.stroke();
       }
       // Cieniowanie głębi
       const depth = c.createRadialGradient(0, 0, R * 0.2, 0, 0, R);
-      depth.addColorStop(0, 'rgba(0,0,0,0.25)');
+      depth.addColorStop(0, 'rgba(0,0,0,0.18)');
       depth.addColorStop(0.35, 'rgba(0,0,0,0)');
       depth.addColorStop(0.92, 'rgba(0,0,0,0)');
-      depth.addColorStop(1, 'rgba(0,0,0,0.35)');
+      depth.addColorStop(1, 'rgba(0,0,0,0.28)');
       c.beginPath(); c.arc(0, 0, R, 0, TAU); c.fillStyle = depth; c.fill();
       c.restore();
     }
@@ -181,12 +196,15 @@
 
       // Rama (nie obraca się)
       const frame = c.createRadialGradient(cx, cy, Rw, cx, cy, Rf);
-      frame.addColorStop(0, '#8a5a12');
-      frame.addColorStop(0.25, '#f6d36b');
-      frame.addColorStop(0.6, '#c48a1e');
-      frame.addColorStop(1, '#5b3a08');
+      frame.addColorStop(0, C.frame[3]);
+      frame.addColorStop(0.2, C.frame[0]);
+      frame.addColorStop(0.65, C.frame[1]);
+      frame.addColorStop(1, C.frame[2]);
       c.beginPath(); c.arc(cx, cy, Rf, 0, TAU); c.fillStyle = frame; c.fill();
-      c.beginPath(); c.arc(cx, cy, Rf, 0, TAU); c.strokeStyle = 'rgba(0,0,0,0.5)'; c.lineWidth = px * 0.004; c.stroke();
+      // cienkie turkusowe linie po obu stronach pierścienia
+      c.lineWidth = px * 0.0035; c.strokeStyle = C.frameLine;
+      c.beginPath(); c.arc(cx, cy, Rf - px * 0.003, 0, TAU); c.stroke();
+      c.beginPath(); c.arc(cx, cy, Rw + px * 0.004, 0, TAU); c.stroke();
 
       // Żarówki
       const bulbs = 36;
@@ -196,13 +214,13 @@
         const on = this.spinning ? ((i + this.bulbPhase) % 3 === 0) : ((i + this.bulbPhase) % 2 === 0);
         const x = cx + Math.cos(a) * r, y = cy + Math.sin(a) * r;
         c.beginPath();
-        c.arc(x, y, px * 0.0105, 0, TAU);
+        c.arc(x, y, px * 0.0085, 0, TAU);
         if (on) {
-          const g = c.createRadialGradient(x, y, 0, x, y, px * 0.02);
-          g.addColorStop(0, '#fffbe6'); g.addColorStop(0.5, '#ffe27a'); g.addColorStop(1, 'rgba(255,200,60,0)');
+          const g = c.createRadialGradient(x, y, 0, x, y, px * 0.016);
+          g.addColorStop(0, C.bulbOn[0]); g.addColorStop(0.45, C.bulbOn[1]); g.addColorStop(1, C.bulbOn[2]);
           c.fillStyle = g;
-          c.arc(x, y, px * 0.02, 0, TAU);
-        } else c.fillStyle = '#7a5410';
+          c.arc(x, y, px * 0.016, 0, TAU);
+        } else c.fillStyle = C.bulbOff;
         c.fill();
       }
 
@@ -230,24 +248,24 @@
 
       // Statyczny połysk
       const gl = c.createRadialGradient(cx - Rw * 0.35, cy - Rw * 0.45, 0, cx - Rw * 0.35, cy - Rw * 0.45, Rw * 1.1);
-      gl.addColorStop(0, 'rgba(255,255,255,0.22)');
-      gl.addColorStop(0.5, 'rgba(255,255,255,0.04)');
+      gl.addColorStop(0, 'rgba(255,255,255,0.14)');
+      gl.addColorStop(0.5, 'rgba(255,255,255,0.03)');
       gl.addColorStop(1, 'rgba(255,255,255,0)');
       c.beginPath(); c.arc(cx, cy, Rw, 0, TAU); c.fillStyle = gl; c.fill();
 
       // Piasta
       const hr = Rw * 0.17;
       const hub = c.createRadialGradient(cx - hr * 0.3, cy - hr * 0.3, hr * 0.1, cx, cy, hr);
-      hub.addColorStop(0, '#fff3c4'); hub.addColorStop(0.45, '#e6b43c'); hub.addColorStop(1, '#6b4308');
+      hub.addColorStop(0, C.hub[0]); hub.addColorStop(1, C.hub[1]);
       c.beginPath(); c.arc(cx, cy, hr, 0, TAU); c.fillStyle = hub; c.fill();
-      c.lineWidth = px * 0.006; c.strokeStyle = 'rgba(60,35,0,0.8)'; c.stroke();
+      c.lineWidth = px * 0.004; c.strokeStyle = C.hubRing; c.stroke();
       c.beginPath(); c.arc(cx, cy, hr * 0.62, 0, TAU);
       const inner = c.createRadialGradient(cx, cy, 0, cx, cy, hr * 0.62);
-      inner.addColorStop(0, '#2a1650'); inner.addColorStop(1, '#120a2a');
+      inner.addColorStop(0, C.hubInner); inner.addColorStop(1, C.hubInner);
       c.fillStyle = inner; c.fill();
-      c.fillStyle = '#ffd86b';
+      c.fillStyle = C.hubText;
       c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.font = `900 ${Math.round(hr * 0.55)}px "Archivo Black", system-ui, sans-serif`;
+      c.font = `800 ${Math.round(hr * 0.55)}px ${FONT}`;
       c.fillText('KF', cx, cy + hr * 0.03);
     }
 

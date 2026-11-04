@@ -1,18 +1,21 @@
 {
+  "id": "/kolo-fortuny/",
   "name": "Koło Fortuny",
   "short_name": "Koło Fortuny",
   "description": "Teleturniejowa gra słowna z kołem, finałem, botami i trybem online.",
   "lang": "pl",
+  "dir": "ltr",
   "start_url": "./",
   "scope": "./",
   "display": "fullscreen",
   "display_override": ["fullscreen", "standalone"],
   "orientation": "any",
-  "background_color": "#0c0724",
-  "theme_color": "#120a2e",
+  "background_color": "#101A20",
+  "theme_color": "#101A20",
+  "categories": ["games"],
   "icons": [
-    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }

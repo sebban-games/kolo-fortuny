@@ -62,7 +62,7 @@ W menu **Hasła** możesz dodawać własne hasła z kategorią i trudnością. P
 
 ## Ustawienia i statystyki
 
-W **Ustawieniach** zmienisz koszt samogłoski, gwarancję za rundę, czas w finale, uznawanie haseł wpisanych bez polskich znaków, dźwięk i głośność, motyw, tempo animacji i botów, ograniczenie animacji oraz automatyczne przechodzenie do kolejnej rundy. Ekran **Zasady** w grze zawsze pokazuje aktualne wartości.
+W **Ustawieniach** zmienisz koszt samogłoski, gwarancję za rundę, czas w finale, uznawanie haseł wpisanych bez polskich znaków, dźwięk i głośność, motyw (ciemny, jasny albo jak w systemie), tempo animacji i botów, ograniczenie animacji oraz automatyczne przechodzenie do kolejnej rundy. Ekran **Zasady** w grze zawsze pokazuje aktualne wartości.
 
 **Statystyki** zbierają wygrane, rekordy i średnie każdego gracza oraz ostatnie 30 gier.
 
@@ -73,7 +73,7 @@ W **Ustawieniach** zmienisz koszt samogłoski, gwarancję za rundę, czas w fina
 * **Enter** otwiera odgadywanie hasła, zatwierdza litery w finale albo przechodzi do następnej rundy.
 * **Esc** włącza pauzę (w grze online otwiera menu gry) albo anuluje zakup samogłoski. Pauza zatrzymuje też zegar.
 
-Przycisk ⛶ włącza pełny ekran, a 🔊 wycisza dźwięk.
+W prawym górnym rogu ekranu gry są trzy przyciski: głośnik (wycisza i włącza dźwięk), pełny ekran oraz menu gry.
 
 ## Instalacja na telefonie
 
