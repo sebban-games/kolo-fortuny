@@ -189,6 +189,36 @@ test('Niespodzianka: wygrane ryzyko = 10 000', () => {
   s = act(s, { type: 'mystery', choice: 'risk' }, seq(0.1));
   assert.strictEqual(s.players[0].roundBank, 10000);
 });
+test('Niespodzianka: w 3. rundzie nadal 1000 za literę i 10 000 za ryzyko', () => {
+  let s = game(['BABIE LATO', 'KOT PERSKI', 'ZŁOTA RYBKA']);
+  s.round = 2;
+  s = spinTo(s, E.MYSTERY).state;
+  s = act(s, { type: 'consonant', letter: 'B' });
+  assert.strictEqual(s.pendingMystery.safe, 1000); // ZŁOTA RYBKA ma jedno B
+  assert.strictEqual(s.pendingMystery.risk, 10000);
+});
+test('Niespodzianka: koniec czasu daje bezpieczną nagrodę i oddaje turę', () => {
+  let s = game(['BABIE LATO']);
+  s = spinTo(s, E.MYSTERY).state;
+  s = act(s, { type: 'consonant', letter: 'B' });
+  s = E.apply(s, { type: 'timeout' }).state;
+  assert.strictEqual(s.players[0].roundBank, 2000);
+  assert.strictEqual(s.current, 1);
+  assert.strictEqual(s.phase, 'IDLE');
+});
+test('Niespodzianka: bezpieczny wybór zostawia pole na kole', () => {
+  let s = game(['BABIE LATO']);
+  s = spinTo(s, E.MYSTERY).state;
+  s = act(s, { type: 'consonant', letter: 'L' });
+  s = act(s, { type: 'mystery', choice: 'safe' });
+  assert.ok(s.wheel.includes(E.MYSTERY));
+});
+test('wynik rundy jest zapisany w stanie i widoku publicznym', () => {
+  let s = game(['BABIE LATO', 'KOT PERSKI']);
+  s.players[0].roundBank = 400;
+  s = act(s, { type: 'solve', text: 'BABIE LATO' });
+  assert.deepStrictEqual(E.publicView(s).lastRound, { player: 'p1', amount: 1000, earned: 400, auto: false });
+});
 test('Niespodzianka na samogłoskę jest niemożliwa', () => {
   let s = game(['BABIE LATO']);
   s = spinTo(s, E.MYSTERY).state;
